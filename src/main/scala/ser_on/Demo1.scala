@@ -21,7 +21,12 @@ object Demo1 {
     val result: DataStream[Row] = stream.filter(_.nonEmpty).flatMap { p =>
       Seq(Row.of(readFromArray(p.getBytes("UTF-8"))))
     }
-    result.print().setParallelism(1)
+    result.map(_.getField(0) match {
+      case sb: SerializationBeanJsoniter => sb.first
+      case sb2: SerializationBeanJsoniter => sb2.first
+      case sb3: SerializationBeanJsoniter => sb3.first
+      case _ => throw new Exception("illegal object parsed")
+    }).print().setParallelism(1)
     env.execute()
   }
 }
