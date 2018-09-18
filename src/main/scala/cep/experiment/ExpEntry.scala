@@ -24,7 +24,7 @@ object ExpEntry {
     env.setStreamTimeCharacteristic(TimeCharacteristic.ProcessingTime)
     val eventStream = env.fromElements(
       MyEvent(1, "A", "1"), MyEvent(1, "C", "1"),
-      MyEvent(1, "A", "2"), MyEvent(1, "B", "1"), MyEvent(1, "C", "2"),
+      MyEvent(2, "A", "2"), MyEvent(1, "B", "1"), MyEvent(2, "C", "2"),
       MyEvent(1, "A", "3"), MyEvent(1, "D", "2"), MyEvent(1, "C", "3"),
       MyEvent(1, "B", "3")
     )
@@ -32,9 +32,13 @@ object ExpEntry {
       .begin[MyEvent]("pA").where(e => e.kind == "A")
       .followedBy("pC").where(e => e.kind == "C")
       .within(Time.seconds(5))
-    val patternNextStream: PatternStream[MyEvent] = CEP.pattern(eventStream.keyBy(_.id), pattern)
+    val patternNextStream: PatternStream[MyEvent] = CEP.pattern(eventStream.keyBy(_.id)
+      //
+      // то есть шаблон применяется к событиям внутри одного ключа
+      , pattern)
     val outNextStream: DataStream[MyAggregatedEvent] = patternNextStream.flatSelect {
       (pattern: scala.collection.Map[String, Iterable[MyEvent]], collector: Collector[MyAggregatedEvent]) =>
+        println(s"pattern= $pattern")
         val partA = pattern("pA")
         val partC = pattern("pC")
         val resValue = partA.map(_.value).mkString(" ") + " => " + partC.map(_.value).mkString(" ")
