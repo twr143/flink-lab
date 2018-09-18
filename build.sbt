@@ -15,6 +15,7 @@ libraryDependencies ++= Seq(
   "org.apache.flink" %% "flink-connector-kafka-0.11" % flinkVersion,
   "org.apache.flink" %% "flink-cep-scala" % flinkVersion,
   "org.apache.flink" %% "flink-runtime-web" % flinkVersion,
+  "org.apache.flink" %% "flink-table" % flinkVersion,
   "com.github.nscala-time" %% "nscala-time" % "2.20.0",
   "de.javakaffee" % "kryo-serializers" % "0.42",
   "ch.qos.logback" % "logback-classic" % "1.2.3"

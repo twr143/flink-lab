@@ -6,9 +6,11 @@ import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.util.Collector
+
 import scala.collection.Map
 import Model._
 import ExcersizeBase._
+import cep.experiment.ExpEntry.MyEvent
 import ch.qos.logback.classic.Level
 import de.javakaffee.kryoserializers.jodatime.{JodaDateTimeSerializer, JodaLocalDateTimeSerializer}
 import org.apache.flink.types.Row
@@ -27,6 +29,7 @@ object LREntry {
     val speed = 600 // events of 10 minutes are served in 1 second
     // set up the execution environment
     val env = StreamExecutionEnvironment.getExecutionEnvironment
+    env.setStreamTimeCharacteristic(TimeCharacteristic.ProcessingTime)
     env.registerTypeWithKryoSerializer(classOf[DateTime], classOf[JodaDateTimeSerializer])
     // operate in Event-time
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
@@ -37,13 +40,11 @@ object LREntry {
       l => TaxiRide.fromString(l)
     }
     val keyedRides = rides.keyBy(_.rideId)
-    keyedRides.print().setParallelism(1)
+//    keyedRides.print().setParallelism(1)
     // A complete taxi ride has a START event followed by an END event
     // This pattern is incomplete ...
-    val completedRides = Pattern
-      .begin[TaxiRide]("START").where(x => {
-      println(s"el$x"); true
-    }) // ...
+    val completedRides: Pattern[TaxiRide, _ <: TaxiRide]  = Pattern
+      .begin[TaxiRide]("pStart").where(e => e.isStart) // ...
     // We want to find rides that have NOT been completed within 120 minutes
     // This pattern matches rides that ARE completed.
     // Below we will ignore rides that match this pattern, and emit those that timeout.
@@ -58,19 +59,20 @@ object LREntry {
     // ignore rides that complete on time
     val selectFunction = (map: Map[String, Iterable[TaxiRide]], out: Collector[TaxiRide]) => {
       println(s"select functions=${map.values.flatten}")
+      out.collect(map("pStart").head)
     }
     //     val longRides = pattern.flatSelect(timedoutTag)(timeoutFunction)(selectFunction)
     val simpleStream = CEP.pattern(keyedRides, completedRides)
 
     //Thread.sleep(3000)
     //     printOrTest(longRides.getSideOutput(timedoutTag))
-    printOrTest(simpleStream.flatSelect(timedoutTag)(timeoutFunction)(selectFunction).getSideOutput(timedoutTag))
+    printOrTest(simpleStream.flatSelect(selectFunction))
     env.execute("Long Taxi Rides (CEP)")
     Thread.sleep(3000)
   }
 
   def selectFn(pattern: Map[String, Iterable[TaxiRide]]): Iterable[TaxiRide] = {
     println(s"pattern.values.flatten=${pattern.values.flatten}")
-    pattern("START")
+    pattern("pStart")
   }
 }
