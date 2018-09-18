@@ -37,7 +37,7 @@ object LREntry {
       l => TaxiRide.fromString(l)
     }
     val keyedRides = rides.keyBy(_.rideId)
-//    keyedRides.print().setParallelism(1)
+    keyedRides.print().setParallelism(1)
     // A complete taxi ride has a START event followed by an END event
     // This pattern is incomplete ...
     val completedRides = Pattern
@@ -49,7 +49,7 @@ object LREntry {
     // Below we will ignore rides that match this pattern, and emit those that timeout.
     //     val pattern: PatternStream[TaxiRide] = CEP.pattern[TaxiRide](keyedRides, completedRides.within(Time.minutes(120)))
     // side output tag for rides that time out
-    //     val timedoutTag = new OutputTag[TaxiRide]("timedout")
+         val timedoutTag = new OutputTag[TaxiRide]("timedout")
     // collect rides that timeout
     val timeoutFunction = (map: Map[String, Iterable[TaxiRide]], timestamp: Long, out: Collector[TaxiRide]) => {
       val rideStarted = map("START").head
@@ -60,11 +60,11 @@ object LREntry {
       println(s"select functions=${map.values.flatten}")
     }
     //     val longRides = pattern.flatSelect(timedoutTag)(timeoutFunction)(selectFunction)
-    val simpleStream = CEP.pattern(keyedRides, completedRides.within(Time.days(1)))
+    val simpleStream = CEP.pattern(keyedRides, completedRides)
 
     //Thread.sleep(3000)
     //     printOrTest(longRides.getSideOutput(timedoutTag))
-    printOrTest(simpleStream.select(selectFn _))
+    printOrTest(simpleStream.flatSelect(timedoutTag)(timeoutFunction)(selectFunction).getSideOutput(timedoutTag))
     env.execute("Long Taxi Rides (CEP)")
     Thread.sleep(3000)
   }
