@@ -13,9 +13,15 @@ import ExcersizeBase._
 import cep.experiment.ExpEntry.MyEvent
 import ch.qos.logback.classic.Level
 import de.javakaffee.kryoserializers.jodatime.{JodaDateTimeSerializer, JodaLocalDateTimeSerializer}
+import org.apache.flink.api.common.io.{FileInputFormat, FilePathFilter}
+import org.apache.flink.api.java.io.TextInputFormat
 import org.apache.flink.types.Row
 import org.joda.time.{DateTime, LocalDateTime}
 import org.apache.flink.api.java.typeutils.runtime.kryo._
+import org.apache.flink.core.fs.Path
+import org.apache.flink.streaming.api.functions.source.FileProcessingMode
+import org.apache.flink.streaming.api.watermark.Watermark
+import org.apache.flink.table.sources.wmstrategies.PunctuatedWatermarkAssigner
 import org.slf4j.LoggerFactory
 /**
   * Created by Ilya Volynin on 17.09.2018 at 13:56.
@@ -35,7 +41,11 @@ object LREntry {
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     env.setParallelism(parallelism)
     // get the taxi ride data stream, in order
-    val rideData: DataStream[String] = env.readTextFile(input)
+    val rideData: DataStream[String] = env.readFile(
+      new TextInputFormat(new Path(input)), input, FileProcessingMode.PROCESS_ONCE, 100,
+             FilePathFilter.createDefaultFilter())//.assignTimestampsAndWatermarks(new PunctuatedWatermarkAssigner {
+//      override def getWatermark(row: Row, timestamp: Long): Watermark = new Watermark(timestamp)
+//    })
     val rides = rideData.filter(_.nonEmpty).map {
       l => TaxiRide.fromString(l)
     }
