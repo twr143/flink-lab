@@ -47,7 +47,7 @@ object ExpEntry {
       .build
     tableEnv.registerTableSource("events", csvTableSource)
     val table = tableEnv.scan("events")
-        val eventStream = env.fromCollection(List(
+        val eventStream = env.fromCollection(ListBuffer(
             MyEvent(1, "A", "1"), MyEvent(1, "C", "1"),
             MyEvent(2, "A", "2"), MyEvent(1, "B", "1"), MyEvent(2, "C", "2"),
             MyEvent(1, "A", "3"), MyEvent(1, "D", "2"), MyEvent(1, "C", "3"),
