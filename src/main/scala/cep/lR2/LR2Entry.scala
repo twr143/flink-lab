@@ -18,9 +18,9 @@ import org.slf4j.LoggerFactory
 object LR2Entry {
   val patternT = "yyyy-MM-dd HH:mm:ss"
 
-  implicit val timeFormatter = java.time.format.DateTimeFormatter.ofPattern(patternT).withLocale(Locale.US).withZone(ZoneId.systemDefault())
+  implicit val timeFormatter: DateTimeFormatter = java.time.format.DateTimeFormatter.ofPattern(patternT).withLocale(Locale.US).withZone(ZoneId.systemDefault())
 
-  implicit val typeInfoTaxiRide = TypeInformation.of(classOf[TaxiRide])
+  implicit val typeInfoTaxiRide: TypeInformation[TaxiRide] = TypeInformation.of(classOf[TaxiRide])
 
   implicit def textToDate(text: String)(implicit timeFormatter: DateTimeFormatter): ZonedDateTime =
     ZonedDateTime.parse(text, timeFormatter)
@@ -49,10 +49,10 @@ object LR2Entry {
       }
     )
       .within(Time.seconds(5))
-
     val patternNotCompleterRide: Pattern[TaxiRide, _ <: TaxiRide] = Pattern
       .begin[TaxiRide]("pS").where(e => e.kind == "S")
-          .notNext("pE")//can't combine
+      .notNext("pE")
+    //can't combine
     val patternNextStream: PatternStream[TaxiRide] = CEP.pattern(eventStream.keyBy(_.id)
       //
       // то есть шаблон применяется к событиям внутри одного ключа
