@@ -5,6 +5,7 @@ import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks,
 import org.apache.flink.streaming.api.watermark.Watermark
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment, _}
 import org.slf4j.LoggerFactory
+import sensor.model.{SensorReading, SensorSource}
 
 /**
   * Created by Ilya Volynin on 20.09.2018 at 15:57.

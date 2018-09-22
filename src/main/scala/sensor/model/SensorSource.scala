@@ -1,4 +1,5 @@
-package sensor
+package sensor.model
+
 import java.util.Calendar
 
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction
